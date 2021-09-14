@@ -3,11 +3,11 @@
     These are various tools used by spotifycleanup
 '''
 
-import os
-import sys
 import configparser
+import json
+import os
 import sqlite3
-
+import sys
 
 # Normal import
 from library.spotools import get_user_liked_songs, get_user_playlists
@@ -24,20 +24,26 @@ def load_arguments():
         "account"   : str(),
         "action"    : False,
         "backup"    : False,
-        "resetdb"   : False
+        "resetdb"   : False,
+        "test"      : False,
+        "in"        : list(),
+        "out"       : list()
     }
-
     for arg in sys.argv:
-        # Confirm with the user that he selected to delete found files
         if "-account:" in arg:
-            arguments["account"] = arg[9:]
+            arguments["account"]    = arg[9:]
         elif "-action:" in arg:
-            arguments["action"] = arg[8:]
+            arguments["action"]     = arg[8:]
         elif "-backup" in arg:
-            arguments["backup"] = True
+            arguments["backup"]     = True
         elif "-resetdb" in arg:
-            arguments["resetdb"] = True
-
+            arguments["resetdb"]    = True
+        elif "-test" in arg:
+            arguments["test"]       = True
+        elif "-in:" in arg:
+            arguments["in"]         += arg[4:].split(",")
+        elif "-out:" in arg:
+            arguments["out"]        += arg[5:].split(",")
     return arguments
 
 def load_config(filepath):
@@ -141,3 +147,6 @@ def run_backup(spotify, arguments, config):
         for track in playlist["tracks"]["items"]:
             save_song(sqliteb, (track['track']['id'], track['track']['name'], track['track']['artists'][0]['name']))
             attach_playlist_song(sqliteb, (playlist['id'], track['track']['id']))
+
+def json_format(data):
+    return json.dumps(data.json(), sort_keys=True, indent=4)

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 '''
-    These are various tools related to the spotify api used by spotifycleanup
+    These are various tools related to the spotify api
 '''
 
 def get_user_liked_songs(spotify, limit = 50, cap = 5000, verbose = False):
@@ -32,7 +32,16 @@ def get_user_playlists(spotify, limit = 50, cap = 250, verbose = False):
     nb_tracks = 0
     for playlist in origlist:
         pl = spotify.playlist(playlist['id'])
+        pl["tracks"]["items"] = get_playlist_tracks(spotify, playlist['id'])
         playlists.append(pl)
         nb_tracks += len(pl["tracks"]["items"])
     print(f"Found {len(playlists)} playlists containing {nb_tracks} tracks.")
     return playlists
+
+def get_playlist_tracks(spotify, id):
+    results = spotify.playlist_items(id)
+    tracks = results['items']
+    while results['next']:
+        results = spotify.next(results)
+        tracks.extend(results['items'])
+    return tracks
