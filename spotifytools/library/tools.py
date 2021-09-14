@@ -27,7 +27,8 @@ def load_arguments():
         "resetdb"   : False,
         "test"      : False,
         "in"        : list(),
-        "out"       : list()
+        "out"       : list(),
+        "playlists" : list()
     }
     for arg in sys.argv:
         if "-account:" in arg:
@@ -44,6 +45,8 @@ def load_arguments():
             arguments["in"]         += arg[4:].split(",")
         elif "-out:" in arg:
             arguments["out"]        += arg[5:].split(",")
+        elif "-playlists:" in arg:
+            arguments["playlists"]  += arg[11:].split(",")
     return arguments
 
 def load_config(filepath):
@@ -145,8 +148,15 @@ def run_backup(spotify, arguments, config):
     for playlist in playlists:
         save_playlist(sqliteb, (playlist['id'], playlist['name']))
         for track in playlist["tracks"]["items"]:
+            if not track['track']:
+                continue
+            # try:
             save_song(sqliteb, (track['track']['id'], track['track']['name'], track['track']['artists'][0]['name']))
             attach_playlist_song(sqliteb, (playlist['id'], track['track']['id']))
+            # except TypeError:
+            #     print(playlist)
+            #     print(track)
+            #     exit()
 
-def json_format(data):
-    return json.dumps(data.json(), sort_keys=True, indent=4)
+def json_print(data):
+    print(json.dumps(data.json(), sort_keys=True, indent=4))

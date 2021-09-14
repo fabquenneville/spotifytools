@@ -45,3 +45,32 @@ def get_playlist_tracks(spotify, id):
         results = spotify.next(results)
         tracks.extend(results['items'])
     return tracks
+
+def empty_lists(spotify, arguments):
+    for playlist in arguments["playlists"]:
+        # Getting tracks to remove
+        tracks = False
+        playlistid = False
+        if playlist.lower() in ["liked songs", "liked"]:
+            tracks = get_user_liked_songs(spotify)
+        else:
+            result = spotify.search(q="playlist:" + playlist, type="playlist", limit=1)
+            if len(result["playlists"]["items"]) < 1:
+                continue
+            if result["playlists"]["items"][0]["name"].lower() != playlist.lower():
+                continue
+            playlistid = result["playlists"]["items"][0]["id"]
+            tracks = get_playlist_tracks(spotify, playlistid)
+        tracklist = list()
+        for track in tracks:
+            tracklist.append(track["track"]["id"])
+        if len(tracklist) < 1:
+            continue
+        # Removing tracks
+        start = 0
+        while start < len(tracklist):
+            if playlist.lower() in ["liked songs", "liked"]:
+                spotify.current_user_saved_tracks_delete(tracklist[start:start+100])
+            else:
+                spotify.playlist_remove_all_occurrences_of_items(playlistid, tracklist[start:start+100])
+            start += 100

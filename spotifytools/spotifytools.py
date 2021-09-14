@@ -5,13 +5,13 @@ import spotipy
 
 # Normal import
 try:
-    from redbot.library.tools import load_arguments, load_config, create_tables, getdb, save_playlist, save_song, attach_liked_song, attach_playlist_song, run_backup, json_format
-    from redbot.library.spotools import get_user_liked_songs, get_playlist_tracks
+    from redbot.library.tools import load_arguments, load_config, create_tables, getdb, save_playlist, save_song, attach_liked_song, attach_playlist_song, run_backup, json_print
+    from redbot.library.spotools import get_user_liked_songs, get_playlist_tracks, empty_lists
     from redbot.library.lastfmtools import lastfm_get
 # Allow local import for development purposes
 except ModuleNotFoundError:
-    from library.tools import load_arguments, load_config, create_tables, getdb, save_playlist, save_song, attach_liked_song, attach_playlist_song, run_backup, json_format
-    from library.spotools import get_user_liked_songs, get_playlist_tracks
+    from library.tools import load_arguments, load_config, create_tables, getdb, save_playlist, save_song, attach_liked_song, attach_playlist_song, run_backup, json_print
+    from library.spotools import get_user_liked_songs, get_playlist_tracks, empty_lists
     from library.lastfmtools import lastfm_get
 
 def main():
@@ -51,8 +51,7 @@ def main():
                     continue
                 if result["playlists"]["items"][0]["name"].lower() != source.lower():
                     continue
-                playlist = spotify.playlist(result["playlists"]["items"][0]["id"])
-                tracks = playlist["tracks"]["items"]
+                tracks = get_playlist_tracks(spotify, result["playlists"]["items"][0]["id"])
             tracklist = list()
             for track in tracks:
                 tracklist.append(track["track"]["id"])
@@ -60,17 +59,19 @@ def main():
                 continue
             
             for outlist in arguments["out"]:
-                if outlist.lower() in ["liked songs", "liked"]:
-                    spotify.current_user_saved_tracks_add(tracklist)
-                else:
-                    result = spotify.search(q="playlist:" + outlist, type="playlist", limit=1)
-                    if len(result["playlists"]["items"]) < 1:
-                        continue
-                    spotify.playlist_add_items(result["playlists"]["items"][0]["id"], tracklist)
+                start = 0
+                while start < len(tracklist):
+                    if outlist.lower() in ["liked songs", "liked"]:
+                        spotify.current_user_saved_tracks_add(tracklist[start:start+100])
+                    else:
+                        result = spotify.search(q="playlist:" + outlist, type="playlist", limit=1)
+                        if len(result["playlists"]["items"]) < 1:
+                            continue
+                        spotify.playlist_add_items(result["playlists"]["items"][0]["id"], tracklist[start:start+100])
+                    start += 100
 
-
-
-
+    elif arguments["action"] == "empty":
+        empty_lists(spotify, arguments)
     elif arguments["action"] == "test":
         songs = get_user_liked_songs(spotify)
         for song in songs:
