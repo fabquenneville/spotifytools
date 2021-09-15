@@ -61,10 +61,7 @@ def main():
             for listname in arguments["out"]:
                 add_to_list(spotify, listname, tracklist)
             if arguments["action"] == "transfer":
-                if source.lower() in ["liked songs", "liked"]:
-                    tracks = current_user_saved_tracks_delete(tracklist)
-                else:
-                    empty_list(spotify, source)
+                empty_list(spotify, source)
 
 
     elif arguments["action"] == "empty":
