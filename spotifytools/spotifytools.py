@@ -6,12 +6,12 @@ import spotipy
 # Normal import
 try:
     from redbot.library.tools import load_arguments, load_config, create_tables, getdb, save_playlist, save_song, attach_liked_song, attach_playlist_song, run_backup, json_print
-    from redbot.library.spotools import get_user_liked_songs, get_playlist_tracks, empty_lists
+    from redbot.library.spotools import get_user_liked_songs, get_playlist_tracks, empty_list, add_to_list
     from redbot.library.lastfmtools import lastfm_get
 # Allow local import for development purposes
 except ModuleNotFoundError:
     from library.tools import load_arguments, load_config, create_tables, getdb, save_playlist, save_song, attach_liked_song, attach_playlist_song, run_backup, json_print
-    from library.spotools import get_user_liked_songs, get_playlist_tracks, empty_lists
+    from library.spotools import get_user_liked_songs, get_playlist_tracks, empty_list, add_to_list
     from library.lastfmtools import lastfm_get
 
 def main():
@@ -57,21 +57,19 @@ def main():
                 tracklist.append(track["track"]["id"])
             if len(tracklist) < 1:
                 continue
-            
-            for outlist in arguments["out"]:
-                start = 0
-                while start < len(tracklist):
-                    if outlist.lower() in ["liked songs", "liked"]:
-                        spotify.current_user_saved_tracks_add(tracklist[start:start+100])
-                    else:
-                        result = spotify.search(q="playlist:" + outlist, type="playlist", limit=1)
-                        if len(result["playlists"]["items"]) < 1:
-                            continue
-                        spotify.playlist_add_items(result["playlists"]["items"][0]["id"], tracklist[start:start+100])
-                    start += 100
+            print(f"Found {len(tracklist)} tracks.")
+            for listname in arguments["out"]:
+                add_to_list(spotify, listname, tracklist)
+            if arguments["action"] == "transfer":
+                if source.lower() in ["liked songs", "liked"]:
+                    tracks = current_user_saved_tracks_delete(tracklist)
+                else:
+                    empty_list(spotify, source)
+
 
     elif arguments["action"] == "empty":
-        empty_lists(spotify, arguments)
+        for listname in arguments["playlists"]:
+            empty_list(spotify, listname)
     elif arguments["action"] == "test":
         songs = get_user_liked_songs(spotify)
         for song in songs:
