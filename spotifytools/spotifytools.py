@@ -5,13 +5,13 @@ import spotipy
 
 # Normal import
 try:
-    from redbot.library.tools import load_arguments, load_config, create_tables, getdb, save_playlist, save_song, attach_liked_song, attach_playlist_song, run_backup, json_print
-    from redbot.library.spotools import get_user_liked_songs, get_playlist_tracks, empty_list, add_to_list
+    from redbot.library.tools import load_arguments, load_config, create_tables, getdb, save_playlist, save_song, attach_liked_song, attach_playlist_song, json_print
+    from redbot.library.spotools import get_user_liked_songs, get_playlist_tracks, empty_list, add_to_list, run_backup, get_user_playlists, auto_unlike
     from redbot.library.lastfmtools import lastfm_get
 # Allow local import for development purposes
 except ModuleNotFoundError:
-    from library.tools import load_arguments, load_config, create_tables, getdb, save_playlist, save_song, attach_liked_song, attach_playlist_song, run_backup, json_print
-    from library.spotools import get_user_liked_songs, get_playlist_tracks, empty_list, add_to_list
+    from library.tools import load_arguments, load_config, create_tables, getdb, save_playlist, save_song, attach_liked_song, attach_playlist_song, json_print
+    from library.spotools import get_user_liked_songs, get_playlist_tracks, empty_list, add_to_list, run_backup, get_user_playlists, auto_unlike
     from library.lastfmtools import lastfm_get
 
 def main():
@@ -62,7 +62,8 @@ def main():
                 add_to_list(spotify, listname, tracklist)
             if arguments["action"] == "transfer":
                 empty_list(spotify, source)
-
+    elif arguments["action"] == "autounlike":
+        auto_unlike(spotify, config)
 
     elif arguments["action"] == "empty":
         for listname in arguments["playlists"]:
@@ -81,7 +82,17 @@ def main():
         #     # album = spotify.album(song["track"]["album"]["id"])
         #     # print(album["genres"])
             # exit()
-
+    elif arguments["action"] == "test2":
+        token = spotipy.util.prompt_for_user_token(
+            username        = account,
+            scope           = "user-library-read user-library-modify playlist-read-private playlist-modify-private",
+            client_id       = config["spotify"]["id"],
+            client_secret   = config["spotify"]["secret"],
+            redirect_uri    = config["spotify"]["redirect_uri"]
+        )
+        spotify = spotipy.Spotify(auth=token)
+        # print(token)
+        # playlists = get_user_playlists(spotify, config["main"]["account"])
 
 if __name__ == '__main__':
     main()

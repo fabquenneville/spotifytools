@@ -9,9 +9,6 @@ import os
 import sqlite3
 import sys
 
-# Normal import
-from library.spotools import get_user_liked_songs, get_user_playlists
-
 def load_arguments():
     '''Get/load command parameters 
 
@@ -131,32 +128,6 @@ def attach_playlist_song(sqlite, data):
     cursor.execute(sql, data)
     sqlite.commit()
     return cursor.lastrowid
-
-def run_backup(spotify, arguments, config):
-    # Setup backup database
-    if arguments["resetdb"] and os.path.exists(config["main"]["backuppath"]):
-        os.remove(config["main"]["backuppath"])
-    sqliteb = getdb(config["main"]["backuppath"])
-
-    # Saving liked songs
-    likedsongs = get_user_liked_songs(spotify)
-    for track in likedsongs:
-        save_song(sqliteb, (track['track']['id'], track['track']['name'], track['track']['artists'][0]['name']))
-        attach_liked_song(sqliteb, (track['track']['id'], ))
-    # Saving playlists
-    playlists = get_user_playlists(spotify)
-    for playlist in playlists:
-        save_playlist(sqliteb, (playlist['id'], playlist['name']))
-        for track in playlist["tracks"]["items"]:
-            if not track['track']:
-                continue
-            # try:
-            save_song(sqliteb, (track['track']['id'], track['track']['name'], track['track']['artists'][0]['name']))
-            attach_playlist_song(sqliteb, (playlist['id'], track['track']['id']))
-            # except TypeError:
-            #     print(playlist)
-            #     print(track)
-            #     exit()
 
 def json_print(data):
     print(json.dumps(data.json(), sort_keys=True, indent=4))
