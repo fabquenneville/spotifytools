@@ -50,18 +50,17 @@ def get_playlist_tracks(spotify, id):
         tracks.extend(results['items'])
     return tracks
 
-def empty_list(spotify, username, listname, tracks = False):
+def empty_list(spotify, username, listname = False, listid = False, tracks = False):
     # Getting tracks to remove
-    playlistid = False
-    if listname.lower() not in ["liked songs", "liked"]:
-        playlistid = get_user_playlist_id(spotify, username, listname)
+    if listname and listname.lower() not in ["liked songs", "liked"]:
+        listid = get_user_playlist_id(spotify, username, listname)
 
     tracklist = list()
     if not tracks:
         if listname.lower() in ["liked songs", "liked"]:
             tracklist = get_user_liked_songs(spotify)
         else:
-            tracklist = get_playlist_tracks(spotify, playlistid)
+            tracklist = get_playlist_tracks(spotify, listid)
     else:
         tracklist = tracks
     tracks = list()
@@ -74,22 +73,23 @@ def empty_list(spotify, username, listname, tracks = False):
     # Removing tracks
     start = 0
     jumps = 100
-    if listname.lower() in ["liked songs", "liked"]:
+    if listname and listname.lower() in ["liked songs", "liked"]:
         jumps = 20
     while start < len(tracks):
-        if listname.lower() in ["liked songs", "liked"]:
+        print(listname)
+        print(listid)
+        if listname and listname.lower() in ["liked songs", "liked"]:
             spotify.current_user_saved_tracks_delete(tracks[start:start+jumps])
         else:
-            spotify.playlist_remove_all_occurrences_of_items(playlistid, tracks[start:start+jumps])
+            spotify.playlist_remove_all_occurrences_of_items(listid, tracks[start:start+jumps])
         start += jumps
 
-def add_to_list(spotify, username, listname, tracks):
-    listid = False
-    if listname.lower() not in ["liked songs", "liked"]:
+def add_to_list(spotify, username, tracks, listname = False, listid = False):
+    if listname and listname.lower() not in ["liked songs", "liked"]:
         listid = get_user_playlist_id(spotify, username, listname)
     start = 0
     jumps = 100
-    if listname.lower() in ["liked songs", "liked"]:
+    if listname and listname.lower() in ["liked songs", "liked"]:
         jumps = 20
 
     # Handle raw spotify results > extract id's
@@ -102,7 +102,7 @@ def add_to_list(spotify, username, listname, tracks):
             tracks.append(track)
     
     while start < len(tracks):
-        if listname.lower() in ["liked songs", "liked"]:
+        if listname and listname.lower() in ["liked songs", "liked"]:
             spotify.current_user_saved_tracks_add(tracks[start:start+jumps])
         else:
             spotify.playlist_add_items(listid, tracks[start:start+jumps])
@@ -178,9 +178,18 @@ def copy_playlists(spotify, username, innames, outnames, delete = False):
             continue
         print(f"Found {len(tracklist)} tracks.")
         for listname in outnames:
-            add_to_list(spotify, username, listname, tracklist)
+            add_to_list(
+                spotify = spotify,
+                username = username,
+                tracks = tracklist,
+                listname = source
+            )
         if delete:
-            empty_list(spotify, username, source)
+            empty_list(
+                spotify = spotify,
+                username = username,
+                listname = source
+            )
 
 def get_user_playlist_id(spotify, username, listname):
     playlists = get_user_playlists(spotify, username)
@@ -189,16 +198,42 @@ def get_user_playlist_id(spotify, username, listname):
             return playlist['id']
     return False
 
-def shuffle_list(spotify, username, listname):
-    listid = False
+def shuffle_list(spotify, username, listname = False, listid = False):
     tracks = list()
-    if listname.lower() not in ["liked songs", "liked"]:
+    if listname and listname.lower() not in ["liked songs", "liked"]:
         listid = get_user_playlist_id(spotify, username, listname)
-        if listid:
-            tracks = get_playlist_tracks(spotify, listid)
+    if listid:
+        tracks = get_playlist_tracks(spotify, listid)
     else:
         tracks = get_user_liked_songs(spotify)
     if tracks:
-        empty_list(spotify, username, listname, tracks)
-        random.shuffle(tracks)
-        add_to_list(spotify, username, listname, tracks)
+        if listname and listname.lower() not in ["liked songs", "liked"]:
+            empty_list(
+                spotify = spotify,
+                username = username,
+                listname = listname,
+                tracks = tracks
+            )
+            random.shuffle(tracks)
+            add_to_list(
+                spotify = spotify,
+                username = username,
+                tracks = tracks,
+                listname = listname
+            )
+            print(f"Shuffled '{listname}'.")
+        else:
+            empty_list(
+                spotify = spotify,
+                username = username,
+                listid = listid,
+                tracks = tracks
+            )
+            random.shuffle(tracks)
+            add_to_list(
+                spotify = spotify,
+                username = username,
+                tracks = tracks,
+                listid = listid
+            )
+            print(f"Shuffled '{listid}'.")
